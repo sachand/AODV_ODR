@@ -1,0 +1,71 @@
+-----------------------------------------------------------
+CSE533 Network Programming, Assignment3
+Authors:
+    Kunal Aggarwal, 106161443 <Kunal.Aggarwal@stonybrook.edu>
+    Saksham Chand,  109954969 <schand@cs.stonybrook.edu>
+-----------------------------------------------------------
+
+-----------------------------
+PLEASE NOTE BEFORE EVALUATION
+-----------------------------
+
+1. Probably most importantly, the code tries to do error propagation by default.
+    This means if an error occured in remote destination node during
+    message processing, the destination shall propagate the error back.
+    Simplest case is if the client of sender-ODR is trying to contact
+    the server of some receiver-ODR but the server is not running or is
+    not registered with that node's ODR. In this case, receiver-ODR will
+    propagate an error (in this case ENOENT) to the sender-ODR.
+    This might conflict when checking for force-send message. To disable
+    above error propagation, please set PROPAGATE_ERROR to 0 in app_settings.h
+
+2. The logs that you see on screen take the following prefix:
+
+<Time of log> <Type of Log> <VM> <Component identifier>
+  HH:MM:SS     S/E/I/W/D/V  VM##        LOG_TAG     
+
+    This prefix is followed by the log itself. Component Identifier will be
+    one of SERVER, CLIENT and ROUTER.
+
+3. Default read timeout at client is 1 second. This can be changed by changing
+    CLIENT_READ_TIMEOUT_MS in app_settings.h
+
+4. ODR message header is:
+
+    0                   1                   2                   3   
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                                                               |
+    |                          Source ID                            |
+    |                                                               |
+    |                                                               |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                                                               |
+    |                        Destination ID                         |
+    |                                                               |
+    |                                                               |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |           Source Port         |       Destination Port        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                         Broadcast ID                          |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                     |E|F|D|R|R|                               |
+    |        Unused       |R|R|A|E|E|           Hop Count           |
+    |                     |R|C|T|P|Q|                               |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                        Payload Length                         |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    
+    Type of message can be identified using the set flags:
+    
+    Type 0 message      = REQ
+    Type 1 message      = REP
+    RREP sent message   = REQ_REP
+    Type 2 message      = DAT
+    Forced message      = FRC
+    Error message       = ERR
+
+5. With staleness set to 0, the code routes the DAT messages successfully,
+    but this comes at the price of infinite flooding of REQ and REP messages.
+    That is, after the client receives response from the server, all ODRs
+    enter an infinite sequence of REQ/REPs.
